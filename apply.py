@@ -22,6 +22,9 @@ def dispatch(config):
     #print(config['type'])
     #print(VALID_TYPES[config['type']])
     manager = VALID_TYPES[config['type']](config)
+    print("Checking {}".format(config['_obj_name']))
+    changes_required = manager.changes_required()
+    print("{} changes required: {}".format(config['_obj_name'], changes_required))
 
 if __name__ == '__main__':
     with open(argv[1]) as f:
