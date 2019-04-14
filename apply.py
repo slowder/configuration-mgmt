@@ -29,7 +29,6 @@ def dispatch(config):
 if __name__ == '__main__':
     with open(argv[1]) as f:
         objects = [obj.update({'_obj_name': _obj_name}) or obj for _obj_name,obj in yaml.load(f).items()]
-    print(objects)
     for obj in objects:
         validate(obj)
         dispatch(obj)
