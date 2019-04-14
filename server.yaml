@@ -1,0 +1,15 @@
+php_index_file:
+    type: file
+    path: /var/www/html/index.php
+    owner: root
+    group: root
+    permissions: 644
+    content: |
+        <?php
+
+        header("Content-Type: text/plain");
+
+        echo "Hello, world!\n";
+
+dummy_object:
+    type: dummy
