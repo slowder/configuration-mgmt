@@ -12,5 +12,15 @@ php_index_file:
 
         echo "Hello, world!\n";
 
-dummy_object:
-    type: dummy
+package_apache2:
+    type: package
+    name: apache2
+    version: 1234
+
+hello_world_service:
+    type: service
+    name: apache2
+    state: running
+    dependencies:
+        - php_index_file
+        - package_apache2
