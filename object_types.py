@@ -8,7 +8,7 @@ class ManagedBase:
     """
     Define allowed/expected fields for configuration object types.
     """
-    _special_fields = ['_obj_name', 'type']  # _obj_name and type are special fields that exist in all configuraiton objects.
+    _special_fields = ['_obj_name', 'type', 'dependencies']  # special fields that exist in all configuraiton objects.
     fields = []
 
     def __init__(self, obj):
