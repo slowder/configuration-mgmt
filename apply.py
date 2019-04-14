@@ -1,13 +1,14 @@
 import yaml
 from sys import argv
-from object_types import ManagedFile, ManagedPackage, Dummy, TestExample
+from object_types import ManagedFile, ManagedPackage, ManagedService, Dummy, TestExample
 
 
 VALID_TYPES = {
     'file': ManagedFile,
     'dummy': Dummy,
     'package': ManagedPackage,
-    'test': TestExample
+    'test': TestExample,
+    'service': ManagedService
 }
 
 def validate(config):
