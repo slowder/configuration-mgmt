@@ -1,6 +1,7 @@
 php_index_file:
     type: file
-    path: /var/www/html/index.php
+    path: /var/www/html/
+    name: index.php
     owner: root
     group: root
     permissions: 644
