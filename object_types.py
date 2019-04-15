@@ -110,7 +110,7 @@ class ManagedPackage(ManagedBase):
     def changes_required(self, changes={}):
         found_change = False
         # sudo apt-get update
-        Popen(['sudo', 'apt-get', 'update'], stdout=PIPE)
+        Popen(['sudo', 'apt-get', 'update'], stdout=PIPE).communicate()
         with Popen(['dpkg', '-s', self.config['name']], stdout=PIPE) as proc:
             # sudo dpkg -s <name>
             # find "Status: install ok installed" or similar in output
@@ -162,9 +162,9 @@ class ManagedService(ManagedBase):
     def apply(self):
         if self.restart_required:
             print("restarting {} {}".format(self.config['_obj_name'], self.config['name']))
-            Popen(['sudo', 'service', self.config['name'], 'restart'], stdout=PIPE)
+            Popen(['sudo', 'service', self.config['name'], 'restart'], stdout=PIPE).communicate()
             return
         elif self.config['state'] == 'running':
-            Popen(['sudo', 'service', self.config['name'], 'start'], stdout=PIPE)
+            Popen(['sudo', 'service', self.config['name'], 'start'], stdout=PIPE).communicate()
         elif self.config['state'] == 'stopped':
-            Popen(['sudo', 'service', self.config['name'], 'stop'], stdout=PIPE)
+            Popen(['sudo', 'service', self.config['name'], 'stop'], stdout=PIPE).communicate()

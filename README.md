@@ -7,5 +7,5 @@ A really simple configuration management tool written from scratch.
 * Supports Debian packages thorugh Apt, text files, and services
 * Simple dependency support restarts services when dependent objects change
 
-Example server setup:
+Example local server setup:
 `sudo python3 apply.py server.yaml`
