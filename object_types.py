@@ -61,14 +61,14 @@ class ManagedFile(ManagedBase):
         if not file_path.is_file():
             print('File "{}" does not exist.'.format(self.config['name']))
             return True
-        with open(file_path, 'r') as f:
+        with open(str(file_path), 'r') as f:
             c = f.read()
             if c != self.config['content']:
                 print('Content mismatch in file "{}"'.format(self.config['name']))
                 found_change = True
                 self.content_mismatch = True
 
-        stat_info = os.stat(file_path)
+        stat_info = os.stat(str(file_path))
         mode = stat_info.st_mode
         uid = stat_info.st_uid
         gid = stat_info.st_gid
@@ -98,12 +98,12 @@ class ManagedFile(ManagedBase):
             
         if not file_path.is_file() or self.content_mismatch:
             print("Writing file {}".format(self.config['name']))
-            with open(file_path, 'w') as f:
+            with open(str(file_path), 'w') as f:
                 f.write(self.config['content'])
         
-        shutil.chown(file_path, user=self.config['owner'], group=self.config['group'])
-        print("setting {} to {}".format(file_path, str(self.config['mode'])))
-        os.chmod(file_path, int(str(self.config['mode']),8))
+        shutil.chown(str(file_path), user=self.config['owner'], group=self.config['group'])
+        print("setting {} to {}".format(str(file_path), str(self.config['mode'])))
+        os.chmod(str(file_path), int(str(self.config['mode']),8))
 
 class ManagedPackage(ManagedBase):
     fields = ['name', 'version']
