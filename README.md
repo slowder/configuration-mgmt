@@ -18,7 +18,7 @@ ssh -t USER@SERVER "sudo apt install python3-pip; sudo pip3 install pyyaml"
 ssh -t USER@SERVER "wget https://github.com/slowder/configuration-mgmt/archive/0.7.tar.gz; tar -zxvf 0.7.tar.gz"
 ssh -t USER@SERVER "sudo python3 configuration-mgmt-0.7/apply.py configuration-mgmt-0.7/server1404.yaml; curl localhost"
 ```
-Example Ubuntu14.04 remote setup with MULTIPLE SERVERS and ALL IN ONE LINE:
+Example Ubuntu14.04 remote setup with *MULTIPLE SERVERS* and *ALL IN ONE LINE*:
 ```
 for s in USER@SERVER USER@SERVER; do ssh -t $s "sudo apt install -y python3-pip; sudo pip3 install pyyaml; wget https://github.com/slowder/configuration-mgmt/archive/0.7.tar.gz; tar -zxvf 0.7.tar.gz; sudo python3 configuration-mgmt-0.7/apply.py configuration-mgmt-0.7/server1404.yaml; curl localhost"; done
 ```
