@@ -56,15 +56,15 @@ class ManagedFile(ManagedBase):
         base_path = Path(self.config['path'])
         file_path = Path(PurePath(self.config['path']).joinpath(self.config['name']))
         if not base_path.is_dir():
-            print('Directory does not exist')
+            print('Directory {} does not exist'.format(self.config['path']))
             return True
         if not file_path.is_file():
-            print('File does not exist.')
+            print('File "{}" does not exist.'.format(self.config['name']))
             return True
         with open(file_path, 'r') as f:
             c = f.read()
             if c != self.config['content']:
-                print('Content mismatch')
+                print('Content mismatch in file "{}"'.format(self.config['name']))
                 found_change = True
                 self.content_mismatch = True
 
@@ -93,17 +93,17 @@ class ManagedFile(ManagedBase):
         base_path = Path(self.config['path'])
         file_path = Path(PurePath(self.config['path']).joinpath(self.config['name']))
         if not base_path.is_dir():
-            print("Making directories")
+            print("Making directories: {}".format(self.config['path']))
             os.makedirs(base_path, mode=self.config['mode'], exist_ok=True)
             
         if not file_path.is_file() or self.content_mismatch:
-            print("Writing file")
+            print("Writing file {}".format(self.config['name']))
             with open(file_path, 'w') as f:
                 f.write(self.config['content'])
         
-        print(shutil.chown(file_path, user=self.config['owner'], group=self.config['group']))
+        shutil.chown(file_path, user=self.config['owner'], group=self.config['group'])
         print("setting {} to {}".format(file_path, str(self.config['mode'])))
-        print(os.chmod(file_path, int(str(self.config['mode']),8)))
+        os.chmod(file_path, int(str(self.config['mode']),8))
 
 class ManagedPackage(ManagedBase):
     fields = ['name', 'version']
