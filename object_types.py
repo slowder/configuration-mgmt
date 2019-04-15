@@ -94,7 +94,7 @@ class ManagedFile(ManagedBase):
         file_path = Path(PurePath(self.config['path']).joinpath(self.config['name']))
         if not base_path.is_dir():
             print("Making directories: {}".format(self.config['path']))
-            os.makedirs(base_path, mode=int(self.config['mode'], 8), exist_ok=True)
+            os.makedirs(base_path, mode=int(str(self.config['mode']), 8), exist_ok=True)
             
         if not file_path.is_file() or self.content_mismatch:
             print("Writing file {}".format(self.config['name']))
