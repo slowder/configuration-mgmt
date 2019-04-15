@@ -23,7 +23,7 @@ php_index_file:
     name: index.php
     owner: root
     group: root
-    mode: 644
+    mode: 755
     content: |
         <?php
 
