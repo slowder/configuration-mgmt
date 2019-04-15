@@ -1,10 +1,29 @@
+package_apache2:
+    type: package
+    name: apache2
+    version: 2.4.29-1ubuntu4.6
+
+package_php:
+    type: package
+    name: php
+    version: 1:7.2+60ubuntu1
+
+package_modphp:
+    type: package
+    name: libapache2-mod-php
+    version: 1:7.2+60ubuntu1
+    dependencies:
+        - package_apache2
+        - package_php
+
+
 php_index_file:
     type: file
     path: /var/www/html/
     name: index.php
     owner: root
     group: root
-    permissions: 644
+    mode: 644
     content: |
         <?php
 
@@ -12,10 +31,20 @@ php_index_file:
 
         echo "Hello, world!\n";
 
-package_apache2:
-    type: package
-    name: apache2
-    version: 1234
+apache2_dir_config:
+    type: file
+    path: /etc/apache2/mods-available/
+    name: dir.conf
+    owner: root
+    group: root
+    mode: 644
+    content: |
+        <IfModule mod_dir.c>
+                DirectoryIndex index.php index.html index.cgi index.pl index.xhtml index.htm
+        </IfModule>
+
+        # vim: syntax=apache ts=4 sw=4 sts=4 sr noet
+
 
 hello_world_service:
     type: service

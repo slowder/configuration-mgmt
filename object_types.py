@@ -3,6 +3,9 @@ import grp
 import pwd
 from pathlib import Path, PurePath
 import stat
+import sys
+from subprocess import Popen, PIPE
+import shutil
 
 class ManagedBase:
     """
@@ -24,8 +27,15 @@ class ManagedBase:
             if field not in self.config:
                 raise(Exception("Missing expected field '{}' for type '{}' in object '{}'. Expected fields are {}".format(field, self.__class__.__name__, self.config['_obj_name'], self.fields)))
 
-    def changes_required(self) -> bool:
+    def changes_required(self, changes={}) -> bool:
         """Determine whether applying this manager will cause a change."""
+        return self.check_dependent_changes(changes)
+
+    def check_dependent_changes(self, changes):
+        if 'dependencies' in self.config:
+            for dep in self.config['dependencies']:
+                if dep in changes:
+                    return True
         return False
 
     def apply(self) -> bool:
@@ -39,9 +49,9 @@ class TestExample(ManagedBase):
     fields = ['test1', 'test2']
 
 class ManagedFile(ManagedBase):
-    fields = ['path', 'name', 'permissions', 'owner', 'group', 'content']
-
-    def changes_required(self):
+    fields = ['path', 'name', 'mode', 'owner', 'group', 'content']
+    content_mismatch = False
+    def changes_required(self, changes={}):
         found_change = False
         base_path = Path(self.config['path'])
         file_path = Path(PurePath(self.config['path']).joinpath(self.config['name']))
@@ -56,15 +66,16 @@ class ManagedFile(ManagedBase):
             if c != self.config['content']:
                 print('Content mismatch')
                 found_change = True
+                self.content_mismatch = True
 
         stat_info = os.stat(file_path)
         mode = stat_info.st_mode
         uid = stat_info.st_uid
         gid = stat_info.st_gid
-        # Check permissions
+        # Check mode
         file_mode = oct(stat.S_IMODE(mode))[2:]
-        if file_mode != self.config['permissions']:
-            print('File mode incorrect. Current: {} Expected: {}'.format(file_mode, self.config['permissions']))
+        if file_mode != str(self.config['mode']):
+            print('File mode incorrect. Current: {} Expected: {}'.format(file_mode, self.config['mode']))
             found_change = True
 
         # Check owner and group
@@ -78,15 +89,47 @@ class ManagedFile(ManagedBase):
             found_change = True
         return found_change
 
+    def apply(self):
+        base_path = Path(self.config['path'])
+        file_path = Path(PurePath(self.config['path']).joinpath(self.config['name']))
+        if not base_path.is_dir():
+            print("Making directories")
+            os.makedirs(base_path, mode=self.config['mode'], exist_ok=True)
+            
+        if not file_path.is_file() or self.content_mismatch:
+            print("Writing file")
+            with open(file_path, 'w') as f:
+                f.write(self.config['content'])
+        
+        print(shutil.chown(file_path, user=self.config['owner'], group=self.config['group']))
+        print("setting {} to {}".format(file_path, str(self.config['mode'])))
+        print(os.chmod(file_path, int(str(self.config['mode']),8)))
 
 class ManagedPackage(ManagedBase):
     fields = ['name', 'version']
-    def changes_required(self):
+    def changes_required(self, changes={}):
+        found_change = False
         # sudo apt-get update
-        # sudo dpkg -s <name>
-        # find "Status: install ok installed" or similar in output
-        # find version in output, eg "Version: 2.4.29-1ubuntu4.6"
-        pass
+        Popen(['sudo', 'apt-get', 'update'], stdout=PIPE)
+        with Popen(['dpkg', '-s', self.config['name']], stdout=PIPE) as proc:
+            # sudo dpkg -s <name>
+            # find "Status: install ok installed" or similar in output
+            # find version in output, eg "Version: 2.4.29-1ubuntu4.6"
+            output = proc.communicate()[0].decode(sys.stdout.encoding).split('\n')
+            for line in output:
+                if line.startswith('Status: '):
+                    if 'installed' not in line:
+                        print("{}: Package {} not installed.".format(self.config['_obj_name'], self.config['name']))
+                        found_change = True
+                elif line.startswith('Version: '):
+                    version = line[9:]
+                    if str(self.config['version']) not in line:
+                        print("{}: Package {} wrong version. Current: {} Expected: {}".format(self.config['_obj_name'], self.config['name'], version, self.config['version']))
+                        found_change = True
+        return self.check_dependent_changes(changes) or found_change
+
+    def apply(self):
+        Popen(['sudo', 'apt-get', 'install', '-y', self.config['name']+'='+self.config['version'], ], stdout=PIPE).communicate()
 
 class ManagedService(ManagedBase):
     fields = ['name', 'state']
@@ -97,6 +140,31 @@ class ManagedService(ManagedBase):
         if self.config['state'] not in valid_states:
             raise(Exception("Field 'state' must be one of {}").format(valid_states))
     
-    def changes_required(self):
-        "sudo service <name> status"
-        "systemctl status <name>"
+    def changes_required(self, changes={}):
+        found_change = False
+        #"sudo service <name> status"
+        #"systemctl status <name>"
+        
+        with Popen(['sudo', 'service', self.config['name'], 'status'], stdout=PIPE) as proc:
+            # find 'Active: active (running)'
+            output = proc.communicate()[0].decode(sys.stdout.encoding).split('\n')
+            for line in output:
+                if line.startswith('Active:'):
+                    if 'active (running)' not in line and self.config['state'] == 'running':
+                        found_change = True
+                    elif '(stopped)' not in line and self.config['state'] == 'stopped':
+                        found_change = True
+            
+        # Restart if desired state is 'running' and a dpendency changes
+        self.restart_required = self.config['state'] == 'running' and self.check_dependent_changes(changes)
+        return self.restart_required or found_change
+
+    def apply(self):
+        if self.restart_required:
+            print("restarting {} {}".format(self.config['_obj_name'], self.config['name']))
+            Popen(['sudo', 'service', self.config['name'], 'restart'], stdout=PIPE)
+            return
+        elif self.config['state'] == 'running':
+            Popen(['sudo', 'service', self.config['name'], 'start'], stdout=PIPE)
+        elif self.config['state'] == 'stopped':
+            Popen(['sudo', 'service', self.config['name'], 'stop'], stdout=PIPE)
