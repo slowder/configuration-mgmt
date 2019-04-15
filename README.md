@@ -50,3 +50,6 @@ php_index_file:
         echo "Hello, world!\n";
 
 ```
+### TODO:
+Topological sort and cycle detection of dependency graph.
+Better SSH automation.
